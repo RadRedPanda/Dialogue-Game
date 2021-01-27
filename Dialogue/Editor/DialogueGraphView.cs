@@ -56,7 +56,7 @@ public class DialogueGraphView : GraphView
 		button.text = "New Choice";
 		dialogueNode.titleContainer.Add(button);
 
-		TextField textField = new TextField(0, true, false, ' ');
+		TextField textField = new TextField(-1, true, false, ' ');
 		textField.RegisterValueChangedCallback(evt =>
 		{
 			dialogueNode.DialogueText = evt.newValue;
