@@ -11,6 +11,8 @@ public class CanvasController : MonoBehaviour {
     public DialogueController dialogue;
     public GameObject notebook;
 
+	private DialogueManager dialogueManager;
+
     // Use this for initialization
     void Start () {
         Canvas c = GetComponent<Canvas>();
@@ -46,10 +48,16 @@ public class CanvasController : MonoBehaviour {
     public void closeInventory() {
         inventory.closeInventory();
     }
+
     // dialogue stuff
     public void startDialogue(DialogueManager dm) {
-        dialogue.startDialogue(dm);
+		dialogueManager = dm;
+        dialogue.startDialogue(dialogueManager);
     }
+
+	public void nextDialogue(){
+		dialogue.nextDialogue(dialogueManager);
+	}
 
     public void endDialogue() {
         dialogue.endDialogue();

@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections;
+﻿using Assets.Scripts;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.Experimental.GraphView;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -34,7 +35,7 @@ public class DialogueGraphView : GraphView
 	//		nodeName - the name of the new node
 	//	Output:
 	//		the created dialogue node
-	public DialogueNode CreateDialogueNode(string nodeName)
+	public DialogueNode CreateDialogueNode(string nodeName, Expression expression = Expression.Normal, DialogueSpeed speed = DialogueSpeed.Normal)
 	{
 		DialogueNode dialogueNode = new DialogueNode
 		{
@@ -55,6 +56,12 @@ public class DialogueGraphView : GraphView
 		});
 		button.text = "New Choice";
 		dialogueNode.titleContainer.Add(button);
+
+		dialogueNode.Expression = new EnumField(expression);
+		dialogueNode.titleContainer.Add(dialogueNode.Expression);
+
+		dialogueNode.Speed = new EnumField(speed);
+		dialogueNode.titleContainer.Add(dialogueNode.Speed);
 
 		TextField textField = new TextField(-1, true, false, ' ');
 		textField.RegisterValueChangedCallback(evt =>

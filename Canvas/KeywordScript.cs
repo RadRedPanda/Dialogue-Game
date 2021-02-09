@@ -39,10 +39,13 @@ public class KeywordScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
         yield return null;
     }
 
-    public void setUp(string w, Vector3 pos) {
+    public void setUp(string w, Vector3 pos, bool isCapital) {
         text = GetComponent<Text>();
-        text.text = w;
-        word = w;
+		if (isCapital)
+			text.text = char.ToUpper(w[0]) + w.Substring(1);
+		else
+			text.text = w;
+		word = w;
         transform.position = pos;
         startPos = transform.localPosition;
     }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Assets.Scripts;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
@@ -52,7 +53,9 @@ public class GraphSaveUtility
 			{
 				Guid = dialogueNode.GUID,
 				DialogueText = dialogueNode.DialogueText,
-				Position = dialogueNode.GetPosition().position
+				Position = dialogueNode.GetPosition().position,
+				Expression = (Expression)dialogueNode.Expression.value,
+				Speed = (DialogueSpeed)dialogueNode.Speed.value
 			});
 		}
 
@@ -82,7 +85,7 @@ public class GraphSaveUtility
 	private void ClearGraph()
 	{
 		// set the initial node guid to the new initial node's guid
-		Nodes.Find(x => x.EntryPoint).GUID = _containerCache.NodeLinks[0].BaseNodeGuid;
+		Nodes.Find(x => x.EntryPoint).GUID = _containerCache.NodeLinks.Find(x => x.PortName == "Start").BaseNodeGuid;
 
 		foreach(DialogueNode node in Nodes)
 		{
@@ -102,7 +105,7 @@ public class GraphSaveUtility
 	{
 		foreach(DialogueNodeData nodeData in _containerCache.DialogueNodeData)
 		{
-			DialogueNode tempNode = _targetGraphView.CreateDialogueNode(nodeData.DialogueText);
+			DialogueNode tempNode = _targetGraphView.CreateDialogueNode(nodeData.DialogueText, nodeData.Expression, nodeData.Speed);
 			tempNode.GUID = nodeData.Guid;
 			_targetGraphView.AddElement(tempNode);
 
