@@ -1,8 +1,5 @@
 ﻿using Assets.Scripts;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor.UIElements;
 using UnityEngine;
 
 [Serializable]

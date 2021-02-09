@@ -1,27 +1,36 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class InputManager : MonoBehaviour {
+public class InputManager : MonoBehaviour
+{
 
-    public PlayerController playerC;
-    public CameraController cameraC;
-    public CanvasController canvasC;
+	public PlayerController playerC;
+	public CameraController cameraC;
+	public CanvasController canvasC;
 
 	private FiniteStateMachine<InputManager> inputStateMachine;
 	// Use this for initialization
-	void Start ()
+	void Start()
 	{
 		inputStateMachine = new FiniteStateMachine<InputManager>(this);
 		inputStateMachine.TransitionTo<Normal>();
 	}
-	
+
 	// Update is called once per frame
-	void Update ()
+	void Update()
 	{
 		inputStateMachine.Update();
-        cameraC.turnBillboards();
-    }
+		cameraC.turnBillboards();
+	}
+
+	void FixedUpdate()
+	{
+		inputStateMachine.FixedUpdate();
+	}
+
+	void LateUpdate()
+	{
+		inputStateMachine.LateUpdate();
+	}
 
 	private void PlayerMovement()
 	{
@@ -54,14 +63,6 @@ public class InputManager : MonoBehaviour {
 
 		public override void Update()
 		{
-			Context.PlayerMovement();
-			
-			// normal camera movement
-			float mouseX = Input.GetAxis("Mouse X");
-			float mouseY = Input.GetAxis("Mouse Y");
-			float scroll = Input.GetAxis("Mouse ScrollWheel");
-			cameraC.followPlayer(scroll, mouseX, mouseY);
-
 			if (Input.GetButtonDown("Tab"))
 				TransitionTo<InInventory>();
 
@@ -81,37 +82,52 @@ public class InputManager : MonoBehaviour {
 				// remove pop up
 				////////////////////
 			}
+		}
 
+		public override void FixedUpdate()
+		{
+			Context.PlayerMovement();
+
+			// normal camera movement
+			float mouseX = Input.GetAxis("Mouse X");
+			float mouseY = Input.GetAxis("Mouse Y");
+			float scroll = Input.GetAxis("Mouse ScrollWheel");
+			cameraC.followPlayer(scroll, mouseX, mouseY);
 		}
 
 		public override void OnExit()
 		{
-			
+
 		}
 	}
 
 	private class InDialogue : BaseState
 	{
 		private Collider closest;
-		
+
 		public override void OnEnter()
 		{
 			Cursor.visible = true;
 			closest = playerC.CheckIfNear();
 			///////////////////////////// should remove the overhead popup on the character when in dialogue
-			
-			// do stuff when interacting with thing like show dialogue box and move camera
+
+			// do stuff when interacting with thing like show dialogue box and point camera
 			cameraC.setTarget(closest.gameObject);
 			DialogueManager dm = closest.GetComponentInParent<DialogueManager>();
 			if (dm != null)
 				canvasC.startDialogue(dm);
 		}
-		
+
 		public override void Update()
 		{
-			cameraC.inDialogue();
 			if (Input.GetButtonDown("Interact"))
 				canvasC.nextDialogue();
+		}
+
+		public override void FixedUpdate()
+		{
+			Context.PlayerMovement();
+			cameraC.inDialogue();
 		}
 
 		public override void OnExit()
@@ -126,18 +142,18 @@ public class InputManager : MonoBehaviour {
 		{
 			Cursor.visible = true;
 			Time.timeScale = 0;
-			canvasC.openMenu();	//////////////////////// change to be coroutine
+			canvasC.openMenu(); //////////////////////// change to be coroutine
 		}
 
 		public override void Update()
 		{
-			
+
 		}
 
 		public override void OnExit()
 		{
 			Time.timeScale = 1;
-			canvasC.closeMenu();	///////////////////////////// change to be coroutine
+			canvasC.closeMenu();    ///////////////////////////// change to be coroutine
 		}
 	}
 

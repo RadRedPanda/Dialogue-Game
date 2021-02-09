@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -23,6 +22,30 @@ public class FiniteStateMachine<TContext>
 			"Updating FiniteStateMachine with null current state. Did you forget to transition to a starting state?");
 
 		CurrentState.Update();
+
+		PerformPendingTransition();
+	}
+
+	public void FixedUpdate()
+	{
+		PerformPendingTransition();
+
+		Debug.Assert(CurrentState != null,
+			"Updating FiniteStateMachine with null current state. Did you forget to transition to a starting state?");
+
+		CurrentState.FixedUpdate();
+
+		PerformPendingTransition();
+	}
+
+	public void LateUpdate()
+	{
+		PerformPendingTransition();
+
+		Debug.Assert(CurrentState != null,
+			"Updating FiniteStateMachine with null current state. Did you forget to transition to a starting state?");
+
+		CurrentState.LateUpdate();
 
 		PerformPendingTransition();
 	}
@@ -118,6 +141,10 @@ public class FiniteStateMachine<TContext>
 		public virtual void OnExit() { }
 
 		public virtual void Update() { }
+
+		public virtual void FixedUpdate() { }
+
+		public virtual void LateUpdate() { }
 
 		public virtual void CleanUp() { }
 	}
