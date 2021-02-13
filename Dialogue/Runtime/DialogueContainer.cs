@@ -7,4 +7,6 @@ public class DialogueContainer : ScriptableObject
 {
 	public List<NodeLinkData> NodeLinks = new List<NodeLinkData>();
 	public List<DialogueNodeData> DialogueNodeData = new List<DialogueNodeData>();
+	public List<EntryNodeData> EntryNodeData = new List<EntryNodeData>();
+	public StartNodeData StartNodeData;
 }

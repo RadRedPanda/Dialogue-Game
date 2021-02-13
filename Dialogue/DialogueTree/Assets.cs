@@ -23,7 +23,8 @@ namespace Assets.Scripts
 	public enum Keyword
 	{
 		yes,
-		no
+		no,
+		stella
 	}
 
 	[Serializable]

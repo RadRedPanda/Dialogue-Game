@@ -58,10 +58,18 @@ public class DialogueGraph : EditorWindow
 
 		toolbar.Add(new Button(() =>
 		{
-			_graphView.CreateNode("Dialogue Node");
+			_graphView.CreateDNode("Dialogue Node");
 		})
 		{
-			text = "Create Node"
+			text = "Create Dialogue Node"
+		});
+
+		toolbar.Add(new Button(() =>
+		{
+			_graphView.CreateENode(0);
+		})
+		{
+			text = "Create Entry Node"
 		});
 
 		rootVisualElement.Add(toolbar);

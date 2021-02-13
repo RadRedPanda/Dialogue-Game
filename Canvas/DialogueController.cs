@@ -1,25 +1,23 @@
 ﻿using Assets.Scripts;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class DialogueController : MonoBehaviour
 {
-
-	public Canvas canvas;   // the canvas this is rendered on
-	public GameObject keywordContainer; // the GameObject which holds all the keyword objects
-	public GameObject keywordBlueprint; // the blueprint to make new keywords appear
+	public GameObject KeywordContainer; // the GameObject which holds all the keyword objects
+	public GameObject KeywordBlueprint; // the blueprint to make new keywords appear
 
 	public float textDelay = 0.05f; // the delay in between each character in time
-	public RectTransform rt;
 	public GameObject DialogueBox;
-	public Text dialogueName;   // the character's name
-	public Text dialogueText;   // the actual text
-	public AudioSource dialogueSound;   // a blip sound made while the character is speaking
+	public Text DialogueName;   // the character's name
+	public Text DialogueText;   // the actual text
 
+	private Canvas canvas;   // the canvas this is rendered on
+	private AudioSource dialogueSound;   // a blip sound made while the character is speaking
+	private RectTransform rt;
+	private CanvasController canvasC;
 	private DialogueManager dialogueManager;
 	private Collider speakerCollider;   // the collider of who we're speaking to right now
 	private Coroutine open;
@@ -27,12 +25,15 @@ public class DialogueController : MonoBehaviour
 	private bool wait;
 	private bool speaking;
 
-	// Use this for initialization
-	void Start()
+	public void Setup(CanvasController cc)
 	{
+
 		gameObject.SetActive(true);
 		transform.localPosition = new Vector3(0, -1000, 0);
 		rt = GetComponent<RectTransform>();
+		dialogueSound = GetComponent<AudioSource>();
+		canvas = cc.GetComponent<Canvas>();
+		canvasC = cc;
 	}
 
 	public void StartDialogue(DialogueManager dm)
@@ -42,7 +43,7 @@ public class DialogueController : MonoBehaviour
 		StopAllCoroutines();
 		open = StartCoroutine(openDialogue());
 		clearKeywords();
-		dialogueText.text = "";
+		DialogueText.text = "";
 		talking = StartCoroutine(readDialogue(dialogueManager.StartConversation()));
 	}
 
@@ -56,21 +57,23 @@ public class DialogueController : MonoBehaviour
 			if (!string.IsNullOrEmpty(text))
 			{
 				clearKeywords();
-				dialogueText.text = "";
+				DialogueText.text = "";
 				talking = StartCoroutine(readDialogue(text));
 			}
 		}
 	}
 
-	public void ChooseDialogue(string keyword)
+	public bool ChooseDialogue(string keyword)
 	{
 		string text = dialogueManager.ChooseOption(keyword);
 		if (!string.IsNullOrEmpty(text))
 		{
 			clearKeywords();
-			dialogueText.text = "";
+			DialogueText.text = "";
 			talking = StartCoroutine(readDialogue(text));
+			return true;
 		}
+		return false;
 	}
 
 	public void EndDialogue()
@@ -86,36 +89,20 @@ public class DialogueController : MonoBehaviour
 
 	public bool IsHoveringDialogueBox()
 	{
-		return isHoveringObject(DialogueBox);
-	}
-
-	// returns true if the mouse is currently over the canvas object, doesn't care if there's anything in between
-	private bool isHoveringObject(GameObject g)
-	{
-		PointerEventData pointerData = new PointerEventData(EventSystem.current)
-		{
-			pointerId = -1,
-		};
-
-		pointerData.position = Input.mousePosition;
-
-		List<RaycastResult> results = new List<RaycastResult>();
-		EventSystem.current.RaycastAll(pointerData, results);
-		var res = results.Find(x => x.gameObject == g);
-		return res.gameObject != null;
+		return canvasC.IsHoveringObject(DialogueBox);
 	}
 
 	private void clearKeywords()
 	{
-		foreach (Transform t in keywordContainer.GetComponentsInChildren<Transform>())
-			if (t != keywordContainer.transform)
-			{
-				KeywordScript targetScript = t.GetComponent<KeywordScript>();
-				if (targetScript.picked)
-					targetScript.MakeHomeless();
-				else
-					Destroy(t.gameObject);
-			}
+		foreach (Transform t in KeywordContainer.GetComponentsInChildren<Transform>())
+			if (t != KeywordContainer.transform)
+				Destroy(t.gameObject);
+		if (canvasC.KeywordContainer.childCount > 0)
+		{
+			KeywordScript targetScript = canvasC.KeywordContainer.GetChild(0).GetComponent<KeywordScript>();
+			if (targetScript.OldParent == KeywordContainer)
+				targetScript.MakeHomeless();
+		}
 	}
 
 	IEnumerator openDialogue()
@@ -124,10 +111,10 @@ public class DialogueController : MonoBehaviour
 		float dY = 1;
 		while (Mathf.Abs(dY) > 0.01f)
 		{
-			transform.localPosition = new Vector3(transform.localPosition.x, Mathf.SmoothDamp(transform.localPosition.y, 0, ref dY, 0.2f), transform.localPosition.z);
+			transform.position = new Vector3(transform.position.x, Mathf.SmoothDamp(transform.position.y, 0, ref dY, 0.2f), transform.position.z);
 			yield return new WaitForFixedUpdate();
 		}
-		transform.localPosition = new Vector3(transform.localPosition.x, 0, transform.localPosition.z);
+		transform.position = new Vector3(transform.position.x, 0, transform.position.z);
 	}
 
 	IEnumerator closeDialogue()
@@ -136,10 +123,10 @@ public class DialogueController : MonoBehaviour
 		float dY = 1;
 		while (Mathf.Abs(dY) > 0.01f)
 		{
-			transform.localPosition = new Vector3(transform.localPosition.x, Mathf.SmoothDamp(transform.localPosition.y, -1000, ref dY, 1), transform.localPosition.z);
+			transform.position = new Vector3(transform.position.x, Mathf.SmoothDamp(transform.position.y, -1000, ref dY, 1), transform.position.z);
 			yield return new WaitForFixedUpdate();
 		}
-		transform.localPosition = new Vector3(transform.localPosition.x, -1000, transform.localPosition.z);
+		transform.position = new Vector3(transform.position.x, -1000, transform.position.z);
 	}
 
 	IEnumerator readDialogue(string inputText)
@@ -151,14 +138,14 @@ public class DialogueController : MonoBehaviour
 		// display one character at a time
 		for (int currentChar = 1; currentChar <= inputText.Length; currentChar++)
 		{
-			dialogueText.text = inputText.Substring(0, currentChar);
+			DialogueText.text = inputText.Substring(0, currentChar);
 
 			Keyword[] keywords = (Keyword[])Enum.GetValues(typeof(Keyword));
 			// check if one of the keywords showed up
 			foreach (Keyword keyword in keywords)
 			{
 				string keywordString = keyword.ToString();
-				int index = dialogueText.text.ToLower().Substring(lastIndex).IndexOf(keywordString);
+				int index = DialogueText.text.ToLower().Substring(lastIndex).IndexOf(keywordString);
 				if (index > -1)
 				{
 					int canvasIndex = index + lastIndex;    // the absolute index of the found string
@@ -166,15 +153,15 @@ public class DialogueController : MonoBehaviour
 					// check if the word is isolated and not inside of another word
 					//	left condition
 					if (canvasIndex > 0)
-						if (char.IsLetter(dialogueText.text[canvasIndex - 1]))
+						if (char.IsLetter(DialogueText.text[canvasIndex - 1]))
 							continue;
 					//	right condition
-					if (canvasIndex + keywordString.Length < dialogueText.text.Length)
-						if (char.IsLetter(dialogueText.text[canvasIndex + keywordString.Length]))
+					if (canvasIndex + keywordString.Length < DialogueText.text.Length)
+						if (char.IsLetter(DialogueText.text[canvasIndex + keywordString.Length]))
 							continue;
 
 					string text = "";
-					bool isCapital = char.IsUpper(dialogueText.text[canvasIndex]);
+					bool isCapital = char.IsUpper(DialogueText.text[canvasIndex]);
 					for (int i = 0; i < inputText.Length; i++)
 					{
 						switch (inputText[i])
@@ -191,8 +178,8 @@ public class DialogueController : MonoBehaviour
 					}
 
 					TextGenerator textGen = new TextGenerator(text.Length);
-					Vector2 extents = dialogueText.gameObject.GetComponent<RectTransform>().rect.size;
-					textGen.Populate(text, dialogueText.GetGenerationSettings(extents));
+					Vector2 extents = DialogueText.gameObject.GetComponent<RectTransform>().rect.size;
+					textGen.Populate(text, DialogueText.GetGenerationSettings(extents));
 
 					int newLine = text.Substring(0, canvasIndex).Split('\n').Length - 1;
 					int whiteSpace = text.Substring(0, canvasIndex).Split(' ').Length - 1;
@@ -205,11 +192,9 @@ public class DialogueController : MonoBehaviour
 					float leftX = textGen.verts[indexOfTextQuad].position.x;
 					avgPos = new Vector3(leftX, avgPos.y, avgPos.z);
 					avgPos /= canvas.scaleFactor;
-					Vector3 worldPos = dialogueText.transform.TransformPoint(avgPos);
+					Vector3 worldPos = DialogueText.transform.TransformPoint(avgPos);
 
-					GameObject key = Instantiate(keywordBlueprint, keywordContainer.transform);
-					KeywordScript ks = key.GetComponent<KeywordScript>();
-					ks.SetUp(keywordString, worldPos, isCapital, this);
+					CreateKeyword(keywordString, worldPos, isCapital);
 					lastIndex += index + 1;
 				}
 
@@ -221,5 +206,13 @@ public class DialogueController : MonoBehaviour
 			}
 		}
 		speaking = false;
+	}
+
+	public KeywordScript CreateKeyword(string w, Vector3 pos, bool isCapital)
+	{
+		GameObject key = Instantiate(KeywordBlueprint, KeywordContainer.transform);
+		KeywordScript ks = key.GetComponent<KeywordScript>();
+		ks.SetUp(w, pos, isCapital, canvasC);
+		return ks;
 	}
 }

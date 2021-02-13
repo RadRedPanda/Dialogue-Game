@@ -12,7 +12,7 @@ public class GraphSaveUtility
 	private DialogueContainer _containerCache;
 
 	private List<Edge> Edges => _targetGraphView.edges.ToList();
-	private List<DialogueNode> Nodes => _targetGraphView.nodes.ToList().Cast<DialogueNode>().ToList();
+	private List<BaseNode> Nodes => _targetGraphView.nodes.ToList().Cast<BaseNode>().ToList();
 
 	public static GraphSaveUtility GetInstance(DialogueGraphView targetGraphView)
 	{
@@ -32,11 +32,12 @@ public class GraphSaveUtility
 		// gets all the edges where they have an input
 		Edge[] connectedPorts = Edges.Where(x => x.input.node != null).ToArray();
 
+
 		// loops through and adds the info about each edge to the container
 		foreach (Edge edge in connectedPorts)
 		{
-			DialogueNode outputNode = edge.output.node as DialogueNode;
-			DialogueNode inputNode = edge.input.node as DialogueNode;
+			BaseNode outputNode = edge.output.node as BaseNode;
+			BaseNode inputNode = edge.input.node as BaseNode;
 
 			dialogueContainer.NodeLinks.Add(new NodeLinkData
 			{
@@ -46,17 +47,37 @@ public class GraphSaveUtility
 			});
 		}
 
-		// loops through and adds the info about each dialogueNode to the container
-		foreach(DialogueNode dialogueNode in Nodes.Where(node => !node.EntryPoint))
+		// loops through and adds the info about each node to the container
+		List<BaseNode> nodes = Nodes.ToList();
+		foreach (Node node in nodes)
 		{
-			dialogueContainer.DialogueNodeData.Add(new DialogueNodeData
-			{
-				Guid = dialogueNode.GUID,
-				DialogueText = dialogueNode.DialogueText,
-				Position = dialogueNode.GetPosition().position,
-				Expression = (Expression)dialogueNode.Expression.value,
-				Speed = (DialogueSpeed)dialogueNode.Speed.value
-			});
+			switch(node){
+				case DialogueNode n:
+					dialogueContainer.DialogueNodeData.Add(new DialogueNodeData
+					{
+						Guid = n.GUID,
+						DialogueText = n.DialogueText,
+						Position = n.GetPosition().position,
+						Expression = (Expression)n.Expression.value,
+						Speed = (DialogueSpeed)n.Speed.value
+					});
+					break;
+				case EntryNode n:
+					dialogueContainer.EntryNodeData.Add(new EntryNodeData
+					{
+						Guid = n.GUID,
+						Keyword = (Keyword)n.Keyword.value,
+						Position = n.GetPosition().position
+					});
+					break;
+				case BaseNode n:
+					dialogueContainer.StartNodeData = new StartNodeData
+					{
+						Guid = n.GUID,
+						Position = n.GetPosition().position
+					};
+					break;
+			}
 		}
 
 		// creates a folder if there isn't one
@@ -77,22 +98,15 @@ public class GraphSaveUtility
 			return;
 		}
 
-		ClearGraph();
-		CreateNodes();
-		ConnectNodes();
+		clearGraph();
+		createNodes();
+		connectNodes();
 	}
 
-	private void ClearGraph()
+	private void clearGraph()
 	{
-		// set the initial node guid to the new initial node's guid
-		Nodes.Find(x => x.EntryPoint).GUID = _containerCache.NodeLinks.Find(x => x.PortName == "Start").BaseNodeGuid;
-
-		foreach(DialogueNode node in Nodes)
+		foreach(Node node in Nodes)
 		{
-			// leave the initial node
-			if (node.EntryPoint)
-				continue;
-
 			// remove edges connected to this node
 			Edges.Where(x => x.input.node == node).ToList().ForEach(edge => _targetGraphView.RemoveElement(edge));
 
@@ -101,29 +115,53 @@ public class GraphSaveUtility
 		}
 	}
 
-	private void CreateNodes()
+	private void createNodes()
 	{
-		foreach(DialogueNodeData nodeData in _containerCache.DialogueNodeData)
+		BaseNode startNode = _targetGraphView.CreateStartNode();
+		startNode.GUID = _containerCache.StartNodeData.Guid;
+		_targetGraphView.AddElement(startNode);
+		startNode.SetPosition(new Rect(_containerCache.StartNodeData.Position, _targetGraphView.DefaultNodeSize));
+
+		foreach (DialogueNodeData nodeData in _containerCache.DialogueNodeData)
 		{
 			DialogueNode tempNode = _targetGraphView.CreateDialogueNode(nodeData.DialogueText, nodeData.Expression, nodeData.Speed);
 			tempNode.GUID = nodeData.Guid;
 			_targetGraphView.AddElement(tempNode);
 
-			List<NodeLinkData> nodePorts = _containerCache.NodeLinks.Where(X => X.BaseNodeGuid == nodeData.Guid).ToList();
+			List<NodeLinkData> nodePorts = _containerCache.NodeLinks.Where(x => x.BaseNodeGuid == nodeData.Guid).ToList();
 			nodePorts.ForEach(x => _targetGraphView.AddChoicePort(tempNode, x.PortName));
+
+			setNodePosition(tempNode, nodeData.Position);
+		}
+
+		foreach (EntryNodeData nodeData in _containerCache.EntryNodeData)
+		{
+			EntryNode tempNode = _targetGraphView.CreateEntryNode(nodeData.Keyword);
+			tempNode.GUID = nodeData.Guid;
+			_targetGraphView.AddElement(tempNode);
+
+			setNodePosition(tempNode, nodeData.Position);
 		}
 	}
 
-	private void ConnectNodes()
+	private void setNodePosition(BaseNode node, Vector2 position){
+
+		node.SetPosition(new Rect(
+			position,
+			_targetGraphView.DefaultNodeSize
+		));
+	}
+
+	private void connectNodes()
 	{
-		foreach(DialogueNode node in Nodes)
+		foreach(BaseNode node in Nodes)
 		{
 			var connections = _containerCache.NodeLinks.Where(x => x.BaseNodeGuid == node.GUID).ToList();
 			for(int i = 0; i < connections.Count; i++)
 			{
 				string targetNodeGuid = connections[i].TargetNodeGuid;
-				DialogueNode targetNode = Nodes.First(x => x.GUID == targetNodeGuid);
-				LinkNodes(node.outputContainer[i].Q<Port>(), (Port)targetNode.inputContainer[0]);
+				BaseNode targetNode = Nodes.First(x => x.GUID == targetNodeGuid);
+				linkNodes(node.outputContainer[i].Q<Port>(), (Port)targetNode.inputContainer[0]);
 
 				targetNode.SetPosition(new Rect(
 					_containerCache.DialogueNodeData.First(x => x.Guid == targetNodeGuid).Position,
@@ -133,7 +171,7 @@ public class GraphSaveUtility
 		}
 	}
 
-	private void LinkNodes(Port output, Port input)
+	private void linkNodes(Port output, Port input)
 	{
 		Edge tempEdge = new Edge
 		{

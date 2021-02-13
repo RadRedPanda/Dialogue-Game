@@ -63,9 +63,6 @@ public class InputManager : MonoBehaviour
 
 		public override void Update()
 		{
-			if (Input.GetButtonDown("Tab"))
-				TransitionTo<InInventory>();
-
 			if (Input.GetButtonDown("Escape"))
 				TransitionTo<InMenu>();
 
@@ -108,6 +105,7 @@ public class InputManager : MonoBehaviour
 		public override void OnEnter()
 		{
 			Cursor.visible = true;
+			canvasC.OpenInventory();
 			closest = playerC.CheckIfNear();
 			///////////////////////////// should remove the overhead popup on the character when in dialogue
 
@@ -115,13 +113,15 @@ public class InputManager : MonoBehaviour
 			cameraC.setTarget(closest.gameObject);
 			DialogueManager dm = closest.GetComponentInParent<DialogueManager>();
 			if (dm != null)
-				canvasC.startDialogue(dm);
+				canvasC.StartDialogue(dm);
 		}
 
 		public override void Update()
 		{
 			if (Input.GetButtonDown("Interact"))
-				canvasC.nextDialogue();
+				canvasC.NextDialogue();
+			if (!playerC.StillInRange(closest))
+				TransitionTo<Normal>();
 		}
 
 		public override void FixedUpdate()
@@ -132,7 +132,8 @@ public class InputManager : MonoBehaviour
 
 		public override void OnExit()
 		{
-
+			canvasC.CloseInventory();
+			canvasC.EndDialogue();
 		}
 	}
 
@@ -142,7 +143,7 @@ public class InputManager : MonoBehaviour
 		{
 			Cursor.visible = true;
 			Time.timeScale = 0;
-			canvasC.openMenu(); //////////////////////// change to be coroutine
+			canvasC.OpenMenu(); //////////////////////// change to be coroutine
 		}
 
 		public override void Update()
@@ -153,30 +154,7 @@ public class InputManager : MonoBehaviour
 		public override void OnExit()
 		{
 			Time.timeScale = 1;
-			canvasC.closeMenu();    ///////////////////////////// change to be coroutine
-		}
-	}
-
-	private class InInventory : BaseState
-	{
-		public override void OnEnter()
-		{
-			Cursor.visible = true;
-			canvasC.openInventory(); //////////////////////////// fix this to be a coroutine
-		}
-
-		public override void Update()
-		{
-			Context.PlayerMovement();
-			cameraC.followPlayer(0, 0, 0);
-
-			if (Input.GetButtonUp("Tab"))
-				TransitionTo<Normal>();
-		}
-
-		public override void OnExit()
-		{
-			canvasC.closeInventory(); ///////////////////////// fix this to be a coroutine
+			canvasC.CloseMenu();    ///////////////////////////// change to be coroutine
 		}
 	}
 }

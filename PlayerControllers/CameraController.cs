@@ -5,7 +5,7 @@ public class CameraController : MonoBehaviour
 	public GameObject player;
 	public GameObject billboardContainer;
 
-	public Vector2 speed = new Vector2(3, 3);
+	public Vector2 speed = new Vector2(10, 3);
 	public float distance = 3;
 	public float dialogueDistance = 1.5f;
 	public Vector2 yBounds = new Vector2(-9, 60);
@@ -13,6 +13,8 @@ public class CameraController : MonoBehaviour
 	public float cameraSnapSpeed = 0.1f;
 	public int cameraMode = 0;
 	public float cameraSpeed;
+
+	public float lookOffset;
 
 	private Vector3 camVelocity;
 	private Transform[] billboards;
@@ -35,10 +37,10 @@ public class CameraController : MonoBehaviour
 	public void inDialogue()
 	{
 		Vector3 middle = (target.transform.position + player.transform.position) / 2;
+		middle.Set(middle.x, middle.y - lookOffset, middle.z);
 		// slerp the cam
 		Vector3 currentPos = transform.position - player.transform.position;
 		Vector3 targetPos = (target.transform.position - player.transform.position) / 2 + (Quaternion.AngleAxis(90, Vector3.up) * (target.transform.position - player.transform.position)).normalized * dialogueDistance;
-		//transform.position = Vector3.Slerp(currentPos, targetPos, cameraSnapSpeed) + player.transform.position;
 		transform.position = Vector3.SmoothDamp(currentPos, targetPos, ref camVelocity, cameraSpeed) + player.transform.position;
 		transform.LookAt(middle);
 	}

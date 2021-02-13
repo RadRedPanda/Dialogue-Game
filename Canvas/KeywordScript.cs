@@ -6,19 +6,24 @@ using UnityEngine.UI;
 
 public class KeywordScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
-
-	public InventoryController ic;
 	public string word;
 	public float alphaSpeed = 0.01f;
 	public DialogueController dialogueC;
+	public PanelScript CurrentPanel;
 	[HideInInspector]
 	public bool picked;     // true if player is holding word with mouse
 	[HideInInspector]
 	public bool homeless;   // true if it has nowhere to return to, prep for deletion
+	[HideInInspector]
+	public Transform OldParent;
+	//[HideInInspector]
+	public Vector3 StartPos;
 
+	private InventoryController inventoryC;
+	private CanvasController canvasC;
 	private Text text;
 	private Vector3 prevPointerPos;
-	private Vector3 startPos;
+	private RectTransform rectTransform;
 
 	// Use this for initialization
 	void Awake()
@@ -26,6 +31,7 @@ public class KeywordScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
 		picked = false;
 		homeless = false;
 		text = GetComponent<Text>();
+		rectTransform = GetComponent<RectTransform>();
 		text.color = new Color(text.color.r, text.color.g, text.color.b, 0);
 		StartCoroutine(phaseIn());
 	}
@@ -40,23 +46,46 @@ public class KeywordScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
 		}
 	}
 
-	public void SetUp(string w, Vector3 pos, bool isCapital, DialogueController dc)
+	public void SetUp(string w, Vector3 pos, bool isCapital, CanvasController cc)
 	{
 		text = GetComponent<Text>();
 		if (isCapital)
 			text.text = char.ToUpper(w[0]) + w.Substring(1);
 		else
 			text.text = w;
-		word = w;
+		word = text.text;
 		transform.position = pos;
-		startPos = transform.localPosition;
-		dialogueC = dc;
+		StartPos = transform.localPosition;
+		canvasC = cc;
+		inventoryC = canvasC.InventoryC;
+		dialogueC = canvasC.DialogueC;
 	}
 
 	// call this if keyword needs to be deleted
 	public void MakeHomeless()
 	{
+		StopAllCoroutines();
 		homeless = true;
+	}
+
+	public void SetNewHome(PanelScript newHome)
+	{
+		homeless = false;
+		CurrentPanel = newHome;
+		transform.SetParent(CurrentPanel.transform);
+		StartPos = newHome.GetMiddle(rectTransform.rect.width * rectTransform.localScale.x);
+	}
+
+	public void SendHome()
+	{
+		text.raycastTarget = true;
+		StartCoroutine(returnToStartPos());
+	}
+
+	public void DeleteThis()
+	{
+		StopAllCoroutines();
+		Destroy(gameObject);
 	}
 
 	#region Handler Methods
@@ -65,6 +94,9 @@ public class KeywordScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
 	{
 		prevPointerPos = eventData.position;
 		picked = true;
+		OldParent = transform.parent;
+		transform.SetParent(canvasC.KeywordContainer);
+		text.raycastTarget = false;
 		StopAllCoroutines();
 	}
 
@@ -72,28 +104,31 @@ public class KeywordScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
 	void IPointerUpHandler.OnPointerUp(PointerEventData eventData)
 	{
 		picked = false;
-
 		////////////////////// check if the word is dropped in the inventory or whatever, else return to home or delete
 		////////////////////// if in inventory, set startPos and set homeless = false
-		
+
+		if (inventoryC.AddKeywordToPanel(this))
+			return;
+
 		// checks if we're hovering the mouse over the character the player is talking to
 		Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 		RaycastHit hit;
 		if (Physics.Raycast(ray, out hit))
-		{
-			if (dialogueC.IsSpeakerCollider(hit.collider) && !dialogueC.IsHoveringDialogueBox())
-			{
-				dialogueC.ChooseDialogue(word);
-			}
-		}
+			if (dialogueC.IsSpeakerCollider(hit.collider))
+				if (!dialogueC.IsHoveringDialogueBox())
+					if(dialogueC.ChooseDialogue(word))
+						if(CurrentPanel == null)
+							homeless = true;
 
 		if (homeless)
 		{
-			StopAllCoroutines();
-			Destroy(this);
+			DeleteThis();
 		}
 		else
-			StartCoroutine(returnToStartPos());
+		{
+			transform.SetParent(OldParent);
+			SendHome();
+		}
 	}
 	#endregion
 	#region Coroutine Methods
@@ -113,10 +148,10 @@ public class KeywordScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
 	{
 		for (int i = 0; i < 50; i++)
 		{
-			transform.localPosition = Vector3.Lerp(transform.localPosition, startPos, 0.2f);
+			transform.localPosition = Vector3.Lerp(transform.localPosition, StartPos, 0.2f);
 			yield return new WaitForFixedUpdate();
 		}
-		transform.localPosition = startPos;
+		transform.localPosition = StartPos;
 		yield return null;
 	}
 	#endregion

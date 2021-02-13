@@ -5,21 +5,23 @@ using UnityEngine.UI;
 
 public class CanvasController : MonoBehaviour
 {
-
-	public GameObject pauseMenu;
-	public InventoryController inventory;
-	public DialogueController dialogue;
-	public GameObject notebook;
+	public GameObject PauseMenu;
+	public InventoryController InventoryC;
+	public DialogueController DialogueC;
+	public GameObject Notebook;
+	public Transform KeywordContainer;
 
 	// Use this for initialization
 	void Start()
 	{
 		Canvas c = GetComponent<Canvas>();
+		InventoryC.Setup(this);
+		DialogueC.Setup(this);
 	}
 
 	void Update()
 	{
-		//////////////////////////////// look at this, fix tomorrow
+		//////////////////////////////// look at this, fix tomorrow, idk what's even broken about this rn though or what it's supposed to do
 		GraphicRaycaster g = GetComponent<GraphicRaycaster>();
 		List<RaycastResult> results = new List<RaycastResult>();
 
@@ -33,39 +35,55 @@ public class CanvasController : MonoBehaviour
 		/////////////////////////////////////////////
 	}
 
-	public void openMenu()
+	public void OpenMenu()
 	{
 
 	}
 
-	public void closeMenu()
+	public void CloseMenu()
 	{
 
 	}
 
-	public void openInventory()
+	public void OpenInventory()
 	{
-		inventory.openInventory();
+		InventoryC.OpenInventory();
 	}
 
-	public void closeInventory()
+	public void CloseInventory()
 	{
-		inventory.closeInventory();
+		InventoryC.CloseInventory();
 	}
 
 	// dialogue stuff
-	public void startDialogue(DialogueManager dm)
+	public void StartDialogue(DialogueManager dm)
 	{
-		dialogue.StartDialogue(dm);
+		DialogueC.StartDialogue(dm);
 	}
 
-	public void nextDialogue()
+	public void NextDialogue()
 	{
-		dialogue.NextDialogue();
+		DialogueC.NextDialogue();
 	}
 
-	public void endDialogue()
+	public void EndDialogue()
 	{
-		dialogue.EndDialogue();
+		DialogueC.EndDialogue();
+	}
+
+	// returns true if the mouse is currently over the canvas object, doesn't care if there's anything in between
+	public bool IsHoveringObject(GameObject g)
+	{
+		PointerEventData pointerData = new PointerEventData(EventSystem.current)
+		{
+			pointerId = -1,
+		};
+
+		pointerData.position = Input.mousePosition;
+
+		List<RaycastResult> results = new List<RaycastResult>();
+		EventSystem.current.RaycastAll(pointerData, results);
+		var res = results.Find(x => x.gameObject == g);
+		return res.gameObject != null;
 	}
 }

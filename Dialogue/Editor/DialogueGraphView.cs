@@ -26,7 +26,7 @@ public class DialogueGraphView : GraphView
 		Insert(0, grid);
 		grid.StretchToParentSize();
 
-		AddElement(GenerateEntryPointNode());
+		AddElement(CreateStartNode());
 	}
 	#endregion
 	#region Public Methods
@@ -78,10 +78,10 @@ public class DialogueGraphView : GraphView
 		return dialogueNode;
 	}
 
-	//	Summary: creates a new node and adds it to the graph view
+	//	Summary: creates a new dialogue node and adds it to the graph view
 	//	Input:
 	//		nodeName - the name of the new node
-	public void CreateNode(string nodeName)
+	public void CreateDNode(string nodeName)
 	{
 		AddElement(CreateDialogueNode(nodeName));
 	}
@@ -92,7 +92,7 @@ public class DialogueGraphView : GraphView
 	public void AddChoicePort(DialogueNode dialogueNode, string overridenPortName = "")
 	{
 		Port generatedPort = GeneratePort(dialogueNode, Direction.Output);
-		
+
 		// deletes the duplicate label, for some reason it makes it so you can't drag out of the port? super buggy
 		//Label oldLabel = generatedPort.contentContainer.Q<Label>("type");
 		//generatedPort.contentContainer.Remove(oldLabel);
@@ -119,6 +119,64 @@ public class DialogueGraphView : GraphView
 		dialogueNode.RefreshExpandedState();
 		dialogueNode.RefreshPorts();
 	}
+
+	//	Summary: creates a new node and adds it to the graph view
+	//	Input:
+	//		keyword - the keyword which begins this line
+	public EntryNode CreateEntryNode(Keyword keyword)
+	{
+		EntryNode entryNode = new EntryNode
+		{
+			title = "Entry Node",
+			GUID = Guid.NewGuid().ToString()
+		};
+
+		entryNode.styleSheets.Add(Resources.Load<StyleSheet>("Node"));
+
+		entryNode.Keyword = new EnumField(keyword);
+		entryNode.titleContainer.Add(entryNode.Keyword);
+		
+		Port generatedPort = GeneratePort(entryNode, Direction.Output);
+		generatedPort.portName = "Entry";
+		entryNode.outputContainer.Add(generatedPort);
+
+		entryNode.RefreshExpandedState();
+		entryNode.RefreshPorts();
+		entryNode.SetPosition(new Rect(position: Vector2.zero, DefaultNodeSize));
+
+		return entryNode;
+	}
+
+	//	Summary: creates a new entry node and adds it to the graph view
+	//	Input:
+	//		keyword - the keyword of the new node
+	public void CreateENode(Keyword keyword)
+	{
+		AddElement(CreateEntryNode(keyword));
+	}
+
+	//	Summary: creates the first node of the view
+	//	Output:
+	//		the node created
+	public BaseNode CreateStartNode()
+	{
+		BaseNode node = new BaseNode
+		{
+			title = "Start",
+			GUID = Guid.NewGuid().ToString()
+		};
+
+		Port generatedPort = GeneratePort(node, Direction.Output);
+		generatedPort.portName = "Start";
+		node.outputContainer.Add(generatedPort);
+
+		node.RefreshExpandedState();
+		node.RefreshPorts();
+
+		node.SetPosition(new Rect(x: 100, y: 200, width: 100, height: 150));
+
+		return node;
+	}
 	#endregion
 	#region Override Methods
 	//	Summary: gets a list of the ports that we should be able to connect to
@@ -143,31 +201,6 @@ public class DialogueGraphView : GraphView
 	}
 	#endregion
 	#region Private Methods
-	//	Summary: creates the first node of the view
-	//	Output:
-	//		the node created
-	private DialogueNode GenerateEntryPointNode()
-	{
-		DialogueNode node = new DialogueNode
-		{
-			title = "Start",
-			GUID = Guid.NewGuid().ToString(),
-			DialogueText = "",
-			EntryPoint = true
-		};
-
-		Port generatedPort = GeneratePort(node, Direction.Output);
-		generatedPort.portName = "Start";
-		node.outputContainer.Add(generatedPort);
-
-		node.RefreshExpandedState();
-		node.RefreshPorts();
-
-		node.SetPosition(new Rect(x: 100, y: 200, width: 100, height: 150));
-
-		return node;
-	}
-
 	//	Summary: creates a new port on a node
 	//	Inputs:
 	//		node - the node we are adding a new port to
@@ -175,12 +208,12 @@ public class DialogueGraphView : GraphView
 	//		capacity - how many ports it can hold
 	//	Output:
 	//		the port created
-	private Port GeneratePort(DialogueNode node, Direction portDirection, Port.Capacity capacity = Port.Capacity.Single)
+	private Port GeneratePort(Node node, Direction portDirection, Port.Capacity capacity = Port.Capacity.Single)
 	{
 		return node.InstantiatePort(Orientation.Horizontal, portDirection, capacity, typeof(float));
 	}
 
-	private void RemovePort(DialogueNode dialogueNode, Port generatedPort)
+	private void RemovePort(Node node, Port generatedPort)
 	{
 		var targetEdge = edges.ToList().Where(x => x.output.portName == generatedPort.portName && x.output.node == generatedPort.node);
 		if (targetEdge.Any())
@@ -190,9 +223,9 @@ public class DialogueGraphView : GraphView
 			RemoveElement(targetEdge.First());
 		}
 
-		dialogueNode.outputContainer.Remove(generatedPort);
-		dialogueNode.RefreshPorts();
-		dialogueNode.RefreshExpandedState();
+		node.outputContainer.Remove(generatedPort);
+		node.RefreshPorts();
+		node.RefreshExpandedState();
 
 	}
 	#endregion
