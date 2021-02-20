@@ -18,15 +18,18 @@ public class CameraController : MonoBehaviour
 
 	private Vector3 camVelocity;
 	private Transform[] billboards;
-	private Vector2 rotation;
 	private Vector3 playerPrevPos;
 	private GameObject target;
+	private Vector2 targetRotation;
+	private Vector2 currentRotation;
+	private Vector2 rotationVelocity;
 
 	void Start()
 	{
 		billboards = billboardContainer.GetComponentsInChildren<Transform>();
 		playerPrevPos = player.transform.position;
 		camVelocity = Vector3.zero;
+		rotationVelocity = Vector2.zero;
 	}
 
 	public void setTarget(GameObject t)
@@ -52,7 +55,10 @@ public class CameraController : MonoBehaviour
 		float mouseY = my * speed.y;
 
 		// calculates at what rotation the camera should be in
-		rotation = new Vector2((rotation.x + mouseX) % 360, Mathf.Max(Mathf.Min(rotation.y - mouseY, yBounds.y), yBounds.x));
+		targetRotation = new Vector2((targetRotation.x + mouseX), Mathf.Max(Mathf.Min(targetRotation.y - mouseY, yBounds.y), yBounds.x));
+
+		// lerp the camera's rotation
+		currentRotation = Vector2.SmoothDamp(currentRotation, targetRotation, ref rotationVelocity, cameraSpeed);
 
 		// changes how far the camera is
 		distance = Mathf.Max(Mathf.Min(distance - scroll, scrollBounds.y), scrollBounds.x);
@@ -61,10 +67,9 @@ public class CameraController : MonoBehaviour
 		transform.position += player.transform.position - playerPrevPos;
 		playerPrevPos = player.transform.position;
 
-		// slerp the cam
-		Vector3 currentPos = transform.position - player.transform.position;
-		Vector3 targetPos = distance * new Vector3(-Mathf.Sin(Mathf.Deg2Rad * rotation.x) * Mathf.Cos(Mathf.Deg2Rad * rotation.y), Mathf.Sin(Mathf.Deg2Rad * rotation.y), -Mathf.Cos(Mathf.Deg2Rad * rotation.x) * Mathf.Cos(Mathf.Deg2Rad * rotation.y));
-		transform.position = Vector3.Slerp(currentPos, targetPos, cameraSnapSpeed) + player.transform.position;
+		// calculate camera pos from rotation
+		Vector3 targetPos = distance * new Vector3(-Mathf.Sin(Mathf.Deg2Rad * currentRotation.x) * Mathf.Cos(Mathf.Deg2Rad * currentRotation.y), Mathf.Sin(Mathf.Deg2Rad * currentRotation.y), -Mathf.Cos(Mathf.Deg2Rad * currentRotation.x) * Mathf.Cos(Mathf.Deg2Rad * currentRotation.y));
+		transform.position = targetPos + player.transform.position;
 
 		// always looks at the player
 		transform.LookAt(player.transform);
