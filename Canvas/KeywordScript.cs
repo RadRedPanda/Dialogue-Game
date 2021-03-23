@@ -6,9 +6,9 @@ using UnityEngine.UI;
 
 public class KeywordScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
-	public string word;
-	public float alphaSpeed = 0.01f;
-	public DialogueController dialogueC;
+	public string Word;
+	public float AlphaSpeed = 0.01f;
+	public DialogueController DialogueC;
 	public PanelScript CurrentPanel;
 	[HideInInspector]
 	public bool picked;     // true if player is holding word with mouse
@@ -16,9 +16,9 @@ public class KeywordScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
 	public bool homeless;   // true if it has nowhere to return to, prep for deletion
 	[HideInInspector]
 	public Transform OldParent;
-	//[HideInInspector]
+	[HideInInspector]
 	public Vector3 StartPos;
-
+	
 	private InventoryController inventoryC;
 	private CanvasController canvasC;
 	private Text text;
@@ -53,12 +53,12 @@ public class KeywordScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
 			text.text = char.ToUpper(w[0]) + w.Substring(1);
 		else
 			text.text = w;
-		word = text.text;
+		Word = text.text;
 		transform.position = pos;
 		StartPos = transform.localPosition;
 		canvasC = cc;
 		inventoryC = canvasC.InventoryC;
-		dialogueC = canvasC.DialogueC;
+		DialogueC = canvasC.DialogueC;
 	}
 
 	// call this if keyword needs to be deleted
@@ -92,20 +92,21 @@ public class KeywordScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
 	// player dragging mouse on word
 	void IPointerDownHandler.OnPointerDown(PointerEventData eventData)
 	{
-		prevPointerPos = eventData.position;
-		picked = true;
-		OldParent = transform.parent;
-		transform.SetParent(canvasC.KeywordContainer);
-		text.raycastTarget = false;
-		StopAllCoroutines();
+		if (!canvasC.JournalC.JournalOpen)
+		{
+			prevPointerPos = eventData.position;
+			picked = true;
+			OldParent = transform.parent;
+			transform.SetParent(canvasC.KeywordContainer);
+			text.raycastTarget = false;
+			StopAllCoroutines();
+		}
 	}
 
 	// released the mouse hold on the word
 	void IPointerUpHandler.OnPointerUp(PointerEventData eventData)
 	{
 		picked = false;
-		////////////////////// check if the word is dropped in the inventory or whatever, else return to home or delete
-		////////////////////// if in inventory, set startPos and set homeless = false
 
 		if (inventoryC.AddKeywordToPanel(this))
 			return;
@@ -114,10 +115,10 @@ public class KeywordScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
 		Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 		RaycastHit hit;
 		if (Physics.Raycast(ray, out hit))
-			if (dialogueC.IsSpeakerCollider(hit.collider))
-				if (!dialogueC.IsHoveringDialogueBox())
-					if(dialogueC.ChooseDialogue(word))
-						if(CurrentPanel == null)
+			if (DialogueC.IsSpeakerCollider(hit.collider))
+				if (!DialogueC.IsHoveringDialogueBox())
+					if (DialogueC.ChooseDialogue(Word))
+						if (CurrentPanel == null)
 							homeless = true;
 
 		if (homeless)
@@ -135,7 +136,7 @@ public class KeywordScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
 	// phases in the alpha from transparent to opaque
 	IEnumerator phaseIn()
 	{
-		for (float a = 0; a < 1; a += alphaSpeed)
+		for (float a = 0; a < 1; a += AlphaSpeed)
 		{
 			text.color = new Color(text.color.r, text.color.g, text.color.b, a);
 			yield return new WaitForFixedUpdate();

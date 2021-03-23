@@ -5,7 +5,7 @@ public class CameraController : MonoBehaviour
 	public GameObject player;
 	public GameObject billboardContainer;
 
-	public Vector2 speed = new Vector2(10, 3);
+	public Vector3 speed = new Vector3(10, 3, 3);
 	public float distance = 3;
 	public float dialogueDistance = 1.5f;
 	public Vector2 yBounds = new Vector2(-9, 60);
@@ -20,9 +20,9 @@ public class CameraController : MonoBehaviour
 	private Transform[] billboards;
 	private Vector3 playerPrevPos;
 	private GameObject target;
-	private Vector2 targetRotation;
-	private Vector2 currentRotation;
-	private Vector2 rotationVelocity;
+	private Vector3 targetRotation;
+	private Vector3 currentRotation;
+	private Vector3 rotationVelocity;
 
 	void Start()
 	{
@@ -54,21 +54,22 @@ public class CameraController : MonoBehaviour
 		float mouseX = mx * speed.x;
 		float mouseY = my * speed.y;
 
+		// changes how far the camera is
+		distance = Mathf.Max(Mathf.Min(distance - (scroll * speed.z), scrollBounds.y), scrollBounds.x);
+
 		// calculates at what rotation the camera should be in
-		targetRotation = new Vector2((targetRotation.x + mouseX), Mathf.Max(Mathf.Min(targetRotation.y - mouseY, yBounds.y), yBounds.x));
+		targetRotation = new Vector3((targetRotation.x + mouseX), Mathf.Max(Mathf.Min(targetRotation.y - mouseY, yBounds.y), yBounds.x), distance);
 
 		// lerp the camera's rotation
-		currentRotation = Vector2.SmoothDamp(currentRotation, targetRotation, ref rotationVelocity, cameraSpeed);
+		currentRotation = Vector3.SmoothDamp(currentRotation, targetRotation, ref rotationVelocity, cameraSpeed);
 
-		// changes how far the camera is
-		distance = Mathf.Max(Mathf.Min(distance - scroll, scrollBounds.y), scrollBounds.x);
 
 		// make camera not lag behind when moving
 		transform.position += player.transform.position - playerPrevPos;
 		playerPrevPos = player.transform.position;
 
 		// calculate camera pos from rotation
-		Vector3 targetPos = distance * new Vector3(-Mathf.Sin(Mathf.Deg2Rad * currentRotation.x) * Mathf.Cos(Mathf.Deg2Rad * currentRotation.y), Mathf.Sin(Mathf.Deg2Rad * currentRotation.y), -Mathf.Cos(Mathf.Deg2Rad * currentRotation.x) * Mathf.Cos(Mathf.Deg2Rad * currentRotation.y));
+		Vector3 targetPos = currentRotation.z * new Vector3(-Mathf.Sin(Mathf.Deg2Rad * currentRotation.x) * Mathf.Cos(Mathf.Deg2Rad * currentRotation.y), Mathf.Sin(Mathf.Deg2Rad * currentRotation.y), -Mathf.Cos(Mathf.Deg2Rad * currentRotation.x) * Mathf.Cos(Mathf.Deg2Rad * currentRotation.y));
 		transform.position = targetPos + player.transform.position;
 
 		// always looks at the player

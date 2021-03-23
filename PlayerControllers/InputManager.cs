@@ -63,6 +63,8 @@ public class InputManager : MonoBehaviour
 
 		public override void Update()
 		{
+			if (Input.GetButtonDown("Tab"))
+				TransitionTo<InJournal>();
 			if (Input.GetButtonDown("Escape"))
 				TransitionTo<InMenu>();
 
@@ -155,6 +157,28 @@ public class InputManager : MonoBehaviour
 		{
 			Time.timeScale = 1;
 			canvasC.CloseMenu();    ///////////////////////////// change to be coroutine
+		}
+	}
+
+	private class InJournal : BaseState
+	{
+		public override void OnEnter()
+		{
+			Cursor.visible = true;
+			canvasC.OpenJournal();
+
+		}
+
+		public override void Update()
+		{
+			if (Input.GetButtonDown("Tab"))
+				TransitionTo<Normal>();
+		}
+
+		public override void OnExit()
+		{
+			Cursor.visible = false;
+			canvasC.CloseJournal();
 		}
 	}
 }

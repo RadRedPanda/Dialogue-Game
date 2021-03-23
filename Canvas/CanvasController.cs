@@ -8,6 +8,7 @@ public class CanvasController : MonoBehaviour
 	public GameObject PauseMenu;
 	public InventoryController InventoryC;
 	public DialogueController DialogueC;
+	public JournalController JournalC;
 	public GameObject Notebook;
 	public Transform KeywordContainer;
 
@@ -17,6 +18,7 @@ public class CanvasController : MonoBehaviour
 		Canvas c = GetComponent<Canvas>();
 		InventoryC.Setup(this);
 		DialogueC.Setup(this);
+		JournalC.Setup(this);
 	}
 
 	void Update()
@@ -69,6 +71,16 @@ public class CanvasController : MonoBehaviour
 	public void EndDialogue()
 	{
 		DialogueC.EndDialogue();
+	}
+
+	public void OpenJournal()
+	{
+		JournalC.OpenJournal();
+	}
+
+	public void CloseJournal()
+	{
+		JournalC.CloseJournal();
 	}
 
 	// returns true if the mouse is currently over the canvas object, doesn't care if there's anything in between

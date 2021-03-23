@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class InventoryController : MonoBehaviour
 {
@@ -38,7 +39,7 @@ public class InventoryController : MonoBehaviour
 
 	public bool AddKeywordToPanel(KeywordScript k)
 	{
-		PanelScript panel = InventoryPanels.Find(x => canvasC.IsHoveringObject(x.gameObject));
+		PanelScript panel = isHoveringPanel();
 		if (panel == null)
 			return false;
 
@@ -53,13 +54,32 @@ public class InventoryController : MonoBehaviour
 				bootHomelessKeyword(panel.Keyword);
 			DialogueController dialogueC = canvasC.DialogueC;
 			Transform dialogueT = dialogueC.DialogueBox.transform;
-			dialogueC.CreateKeyword(k.word, dialogueT.TransformPoint(k.StartPos), char.IsUpper(k.word[0]));
+			dialogueC.CreateKeyword(k.Word, dialogueT.TransformPoint(k.StartPos), char.IsUpper(k.Word[0]));
 		}
 		else if (k.CurrentPanel != null)
 			if (panel.Occupied)
 				sendKeywordToPanel(panel.Keyword, k.CurrentPanel);
 		sendKeywordToPanel(k, panel);
 		return true;
+	}
+	
+	// returns true if the mouse is currently over the canvas object, doesn't care if there's anything in between
+	public PanelScript isHoveringPanel()
+	{
+		PointerEventData pointerData = new PointerEventData(EventSystem.current)
+		{
+			pointerId = -1,
+		};
+
+		pointerData.position = Input.mousePosition;
+
+		List<RaycastResult> results = new List<RaycastResult>();
+		EventSystem.current.RaycastAll(pointerData, results);
+
+		foreach (PanelScript pScript in InventoryPanels)
+			if (results.Find(x => x.gameObject == pScript.gameObject).gameObject != null)
+				return pScript;
+		return null;
 	}
 
 	private void sendKeywordToPanel(KeywordScript k, PanelScript p)

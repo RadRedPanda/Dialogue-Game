@@ -172,27 +172,31 @@ public class DialogueController : MonoBehaviour
 								text += '\n';
 								break;
 							default:
-								text += 'a';
+								text += inputText[i];
 								break;
 						}
 					}
+					text = inputText;
 
 					TextGenerator textGen = new TextGenerator(text.Length);
 					Vector2 extents = DialogueText.gameObject.GetComponent<RectTransform>().rect.size;
 					textGen.Populate(text, DialogueText.GetGenerationSettings(extents));
 
 					int newLine = text.Substring(0, canvasIndex).Split('\n').Length - 1;
-					int whiteSpace = text.Substring(0, canvasIndex).Split(' ').Length - 1;
 					int indexOfTextQuad = ((canvasIndex) * 4) + (newLine * 4);
 					Vector3 avgPos = (textGen.verts[indexOfTextQuad].position +
 						textGen.verts[indexOfTextQuad + 1].position +
 						textGen.verts[indexOfTextQuad + 2].position +
 						textGen.verts[indexOfTextQuad + 3].position) / 4f;
 
+					Debug.Log(textGen.verts[indexOfTextQuad].position.x);
+
 					float leftX = textGen.verts[indexOfTextQuad].position.x;
 					avgPos = new Vector3(leftX, avgPos.y, avgPos.z);
 					avgPos /= canvas.scaleFactor;
 					Vector3 worldPos = DialogueText.transform.TransformPoint(avgPos);
+
+					Debug.Log(newLine + " | " + " | " + indexOfTextQuad);
 
 					CreateKeyword(keywordString, worldPos, isCapital);
 					lastIndex += index + 1;
