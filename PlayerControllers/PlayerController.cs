@@ -6,7 +6,6 @@ public class PlayerController : MonoBehaviour
 	public float speed = 3;
 	public float acceleration = 5;
 	public float interactiveRadius = 1.5f;
-
 	private float lastInputAngle = 0;
 	private Rigidbody rb;
 
